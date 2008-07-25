@@ -4,7 +4,7 @@ import itkExtras
 class bioformats( itkExtras.pipeline ):
   """ Use bioformat to import image in ITK.
   """
-  def __init__(self, FileName=None, Channel=0, Series=0, ImageType=None ):
+  def __init__(self, FileName=None, Channel=0, Series=0, Time=0, ImageType=None ):
     import itk
     itk.pipeline.__init__(self)
     
@@ -31,6 +31,7 @@ class bioformats( itkExtras.pipeline ):
     # and configure the pipeline
     self.SetChannel( Channel )
     self.SetSeries( Series )
+    self.SetTime( Time )
     self.SetFileName( FileName )
       
   def Run(self):
@@ -41,14 +42,21 @@ class bioformats( itkExtras.pipeline ):
       cp = "%s%sbio-formats.jar:%s%sloci_tools.jar:%s" % (dir, os.sep, dir, os.sep, dir)
       # prepare the command
       import commands
-      com = "java -cp %s SimpleImageConverter -channel %s -series %s %s %s"
-      com = com % (cp, self.GetChannel(), self.GetSeries(), self.GetFileName(), self.__tmpFile__.name)
+      com = "java -cp %s SimpleImageConverter -channel %s -series %s -time %s %s %s"
+      com = com % (cp, self.GetChannel(), self.GetSeries(), self.GetTime(), self.GetFileName(), self.__tmpFile__.name)
       # print com
       status, output = commands.getstatusoutput( com )
       if status:
         raise output
-      spacing = [float(v) for v in output.strip().split("\t")]
+      # get some metadata
+      spacingStr, channelStr, timeStr, seriesStr = output.strip().split("\n")
+      
+      spacing = [float(v) for v in spacingStr.strip().split("\t")]
       self[-1].SetOutputSpacing( spacing )
+      
+      self.__number_of_channels__ = int(channelStr)
+      self.__number_of_series__ = int(seriesStr)
+      self.__number_of_times__ = int(timeStr)
     
   def SetFileName( self, fileName ):
     self.__file_name__ = fileName
@@ -62,6 +70,10 @@ class bioformats( itkExtras.pipeline ):
     self.__series__ = series
     self.Run()
 
+  def SetTime( self, time ):
+    self.__time__ = time
+    self.Run()
+
   def GetFileName(self):
     return self.__file_name__
   
@@ -70,6 +82,18 @@ class bioformats( itkExtras.pipeline ):
 
   def GetSeries(self):
     return self.__series__
+
+  def GetTime(self):
+    return self.__time__
+
+  def GetNumberOfChannels(self):
+    return self.__number_of_channels__
+
+  def GetNumberOfSeries(self):
+    return self.__number_of_series__
+
+  def GetNumberOfTimes(self):
+    return self.__number_of_times__
 
 
 del itkExtras

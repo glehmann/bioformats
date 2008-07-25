@@ -51,6 +51,7 @@ public final class SimpleImageConverter {
     String in = null, out = null;
     int series = 0;
     int channel = 0;
+    int time = 0;
     if (args != null) {
       for (int i=0; i<args.length; i++) {
         if (args[i].startsWith("-") && args.length > 1) {
@@ -63,6 +64,12 @@ public final class SimpleImageConverter {
           else if (args[i].equals("-channel")) {
             try {
               channel = Integer.parseInt(args[++i]);
+            }
+            catch (NumberFormatException exc) { }
+          }
+          else if (args[i].equals("-time")) {
+            try {
+              time = Integer.parseInt(args[++i]);
             }
             catch (NumberFormatException exc) { }
           }
@@ -105,6 +112,9 @@ public final class SimpleImageConverter {
       MetadataRetrieve meta = (MetadataRetrieve) store;
       writer.setMetadataRetrieve(meta);
       LogTools.println( meta.getDimensionsPhysicalSizeX(0, 0)+"\t"+meta.getDimensionsPhysicalSizeY(0, 0)+"\t"+meta.getDimensionsPhysicalSizeZ(0, 0) );
+      LogTools.println( reader.getSizeC() );
+      LogTools.println( reader.getSizeT() );
+      LogTools.println( reader.getSeriesCount() );
     }
 
     writer.setId(out);
@@ -112,7 +122,7 @@ public final class SimpleImageConverter {
     for( int z=0; z<reader.getSizeZ(); z++ )
       {
 //      LogTools.println(z);
-      Image image = reader.openImage( reader.getIndex(z, channel, 0) );
+      Image image = reader.openImage( reader.getIndex(z, channel, time) );
       writer.saveImage(image, z==reader.getSizeZ()-1);
       }
 
