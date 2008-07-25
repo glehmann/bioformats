@@ -47,7 +47,7 @@ class bioformats( itkExtras.pipeline ):
       # prepare the command
       import commands
       com = "java -cp %s SimpleImageConverter -channel %s -series %s -time %s %s %s"
-      com = com % (cp, self.GetChannel(), self.GetSeries(), self.GetTime(), self.GetFileName(), self.__tmpFile__.name)
+      com = com % (cp, self.GetChannel(), self.GetSeries(), self.GetTime(), self.GetFileName().replace(" ", r"\ "), self.__tmpFile__.name)
       # print com
       status, output = commands.getstatusoutput( com )
       if status:
