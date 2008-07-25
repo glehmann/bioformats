@@ -10,11 +10,15 @@ class bioformats( itkExtras.pipeline ):
     
     # set a fake name to avoid running the filter with the wrong channel
     self.SetFileName( False )
+    self.__number_of_channels__ = 0
+    self.__number_of_series__ = 0
+    self.__number_of_times__ = 0
     
     # if ImageType is None, give it a default value
     # this is useful to avoid loading Base while loading this module
     if ImageType == None:
       ImageType = itk.Image.UC3
+    self.__image_type__ = ImageType
       
     # remove useless SetInput() method created by the constructor of the pipeline class
 #     del self.SetInput
@@ -94,6 +98,21 @@ class bioformats( itkExtras.pipeline ):
 
   def GetNumberOfTimes(self):
     return self.__number_of_times__
+    
+  def GetImageType(self):
+    return self.__image_type__
+    
+  def __str__(self):
+    s = ""
+    s += "FileName: " + str(self.GetFileName()) + "\n"
+    s += "Channel: " + str(self.GetChannel()) + "\n"
+    s += "NumberOfChannels: " + str(self.GetNumberOfChannels()) + "\n"
+    s += "Time: " + str(self.GetTime()) + "\n"
+    s += "NumberOfTimes: " + str(self.GetNumberOfTimes()) + "\n"
+    s += "Series: " + str(self.GetSeries()) + "\n"
+    s += "NumberOfSeries: " + str(self.GetNumberOfSeries()) + "\n"
+    s += "ImageType: " + repr(self.GetImageType()) + "\n"
+    return s
 
 
 del itkExtras
