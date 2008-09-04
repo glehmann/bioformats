@@ -1,4 +1,4 @@
-FIND_PACKAGE(JAVA)
+FIND_PACKAGE(Java)
 WRAP_ITK_INSTALL("/Python/itkExtras/bioformats" "${CMAKE_CURRENT_SOURCE_DIR}/bio-formats.jar")
 WRAP_ITK_INSTALL("/Python/itkExtras/bioformats" "${CMAKE_CURRENT_SOURCE_DIR}/loci_tools.jar")
 WRAP_ITK_INSTALL("/Python/itkExtras/bioformats" "${CMAKE_CURRENT_BINARY_DIR}/SimpleImageConverter.class")
