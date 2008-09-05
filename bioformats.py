@@ -4,7 +4,7 @@ import itkExtras
 class bioformats( itkExtras.pipeline ):
   """ Use bioformat to import image in ITK.
   """
-  def __init__(self, FileName=None, Channel=0, Series=0, Time=0, ImageType=None ):
+  def __init__(self, FileName=None, Channel=0, Series=0, Time=0, ImageType=None, Z=None ):
     import itk
     itk.pipeline.__init__(self)
     
@@ -13,6 +13,7 @@ class bioformats( itkExtras.pipeline ):
     self.__number_of_channels__ = 0
     self.__number_of_series__ = 0
     self.__number_of_times__ = 0
+    self.__number_of_z__ = 0
     
     # if ImageType is None, give it a default value
     # this is useful to avoid loading Base while loading this module
@@ -31,6 +32,7 @@ class bioformats( itkExtras.pipeline ):
     self.SetChannel( Channel )
     self.SetSeries( Series )
     self.SetTime( Time )
+    self.SetZ( None )
     self.SetFileName( FileName )
       
   def Run(self):
@@ -48,14 +50,18 @@ class bioformats( itkExtras.pipeline ):
       self[0].SetFileName(self.__tmpFile__.name)
       # prepare the command
       import commands
-      com = "java -cp %s SimpleImageConverter -channel %s -series %s -time %s %s %s"
-      com = com % (cp, self.GetChannel(), self.GetSeries(), self.GetTime(), self.GetFileName().replace(" ", r"\ "), self.__tmpFile__.name)
+      if self.GetZ() == None:
+	com = "java -cp %s SimpleImageConverter -channel %s -series %s -time %s %s %s"
+	com = com % (cp, self.GetChannel(), self.GetSeries(), self.GetTime(), self.GetFileName().replace(" ", r"\ "), self.__tmpFile__.name)
+      else:
+	com = "java -cp %s SimpleImageConverter -channel %s -series %s -time %s -z %s %s %s"
+	com = com % (cp, self.GetChannel(), self.GetSeries(), self.GetTime(), self.GetZ(), self.GetFileName().replace(" ", r"\ "), self.__tmpFile__.name)
       # print com
       status, output = commands.getstatusoutput( com )
       if status:
         raise output
       # get some metadata
-      spacingStr, channelStr, timeStr, seriesStr = output.strip().split("\n")
+      spacingStr, channelStr, timeStr, seriesStr, zStr = output.strip().split("\n")
       
       spacing = [float(v) for v in spacingStr.strip().split("\t")]
       self[-1].SetOutputSpacing( spacing )
@@ -63,6 +69,7 @@ class bioformats( itkExtras.pipeline ):
       self.__number_of_channels__ = int(channelStr)
       self.__number_of_series__ = int(seriesStr)
       self.__number_of_times__ = int(timeStr)
+      self.__number_of_z__ = int(zStr)
     
   def SetFileName( self, fileName ):
     self.__file_name__ = fileName
@@ -80,6 +87,10 @@ class bioformats( itkExtras.pipeline ):
     self.__time__ = time
     self.Run()
 
+  def SetZ( self, z ):
+    self.__z__ = z
+    self.Run()
+
   def GetFileName(self):
     return self.__file_name__
   
@@ -92,6 +103,9 @@ class bioformats( itkExtras.pipeline ):
   def GetTime(self):
     return self.__time__
 
+  def GetZ(self):
+    return self.__z__
+
   def GetNumberOfChannels(self):
     return self.__number_of_channels__
 
@@ -100,6 +114,9 @@ class bioformats( itkExtras.pipeline ):
 
   def GetNumberOfTimes(self):
     return self.__number_of_times__
+    
+  def GetNumberOfZ(self):
+    return self.__number_of_z__
     
   def GetImageType(self):
     return self.__image_type__
@@ -110,9 +127,11 @@ class bioformats( itkExtras.pipeline ):
     s += "Channel: " + str(self.GetChannel()) + "\n"
     s += "NumberOfChannels: " + str(self.GetNumberOfChannels()) + "\n"
     s += "Time: " + str(self.GetTime()) + "\n"
+    s += "Z: " + str(self.GetZ()) + "\n"
     s += "NumberOfTimes: " + str(self.GetNumberOfTimes()) + "\n"
     s += "Series: " + str(self.GetSeries()) + "\n"
     s += "NumberOfSeries: " + str(self.GetNumberOfSeries()) + "\n"
+    s += "NumberOfZ: " + str(self.GetNumberOfZ()) + "\n"
     s += "ImageType: " + repr(self.GetImageType()) + "\n"
     return s
 
