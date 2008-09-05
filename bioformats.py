@@ -23,13 +23,8 @@ class bioformats( itkExtras.pipeline ):
     # remove useless SetInput() method created by the constructor of the pipeline class
 #     del self.SetInput
 
-    # use the tempfile module to get a non used file name and to put
-    # the file at the rignt place
-    import tempfile
-    self.__tmpFile__ = tempfile.NamedTemporaryFile(suffix='.tif')
-    
     # set up the pipeline
-    self.connect( itk.ImageFileReader[ImageType].New(FileName=self.__tmpFile__.name) )
+    self.connect( itk.ImageFileReader[ImageType].New() )
     self.connect( itk.ChangeInformationImageFilter[ImageType].New( ChangeSpacing=True ) )
     
     # and configure the pipeline
@@ -44,6 +39,13 @@ class bioformats( itkExtras.pipeline ):
       import os
       dir = os.path.dirname(__file__)+os.sep+"bioformats"
       cp = "%s%sbio-formats.jar:%s%sloci_tools.jar:%s" % (dir, os.sep, dir, os.sep, dir)
+      # remove the file if it already exist, to be sure that it will be written by bioformats
+      # use the tempfile module to get a non used file name and to put
+      # the file at the rignt place
+      import tempfile
+      self.__tmpFile__ = tempfile.NamedTemporaryFile(suffix='.tif')
+      # let reader know that the input file has changed
+      self[0].SetFileName(self.__tmpFile__.name)
       # prepare the command
       import commands
       com = "java -cp %s SimpleImageConverter -channel %s -series %s -time %s %s %s"
