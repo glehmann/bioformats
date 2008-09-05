@@ -32,7 +32,7 @@ class bioformats( itkExtras.pipeline ):
     self.SetChannel( Channel )
     self.SetSeries( Series )
     self.SetTime( Time )
-    self.SetZ( None )
+    self.SetZ( Z )
     self.SetFileName( FileName )
       
   def Run(self):
@@ -50,9 +50,14 @@ class bioformats( itkExtras.pipeline ):
       self[0].SetFileName(self.__tmpFile__.name)
       # prepare the command
       import commands
-      if self.GetZ() == None:
+      if self.GetZ() == None and self.GetTime() == None:
+	raise "Error: At least one of z or time must not be None."
+      elif self.GetZ() == None:
 	com = "java -cp %s SimpleImageConverter -channel %s -series %s -time %s %s %s"
 	com = com % (cp, self.GetChannel(), self.GetSeries(), self.GetTime(), self.GetFileName().replace(" ", r"\ "), self.__tmpFile__.name)
+      elif self.GetTime() == None:
+	com = "java -cp %s SimpleImageConverter -channel %s -series %s -z %s %s %s"
+	com = com % (cp, self.GetChannel(), self.GetSeries(), self.GetZ(), self.GetFileName().replace(" ", r"\ "), self.__tmpFile__.name)
       else:
 	com = "java -cp %s SimpleImageConverter -channel %s -series %s -time %s -z %s %s %s"
 	com = com % (cp, self.GetChannel(), self.GetSeries(), self.GetTime(), self.GetZ(), self.GetFileName().replace(" ", r"\ "), self.__tmpFile__.name)
