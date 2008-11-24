@@ -64,7 +64,7 @@ class bioformats( itkExtras.pipeline ):
       # print com
       status, output = commands.getstatusoutput( com )
       if status:
-        raise output
+        raise output + "\n\n" + com
       # get some metadata
       spacingStr, channelStr, timeStr, seriesStr, zStr = output.strip().split("\n")
       
