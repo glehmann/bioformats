@@ -47,7 +47,7 @@ class bioformats( itkExtras.pipeline ):
       import tempfile
       self.__tmpFile__ = tempfile.NamedTemporaryFile(suffix='.tif')
       # let reader know that the input file has changed
-      self[0].SetFileName(self.__tmpFile__.name)
+      self.filters[0].SetFileName(self.__tmpFile__.name)
       # prepare the command
       import commands
       if self.GetZ() == None and self.GetTime() == None:
@@ -69,7 +69,7 @@ class bioformats( itkExtras.pipeline ):
       spacingStr, channelStr, timeStr, seriesStr, zStr = output.strip().split("\n")
       
       spacing = [float(v) for v in spacingStr.strip().split("\t")]
-      self[-1].SetOutputSpacing( spacing )
+      self.filters[-1].SetOutputSpacing( spacing )
       
       self.__number_of_channels__ = int(channelStr)
       self.__number_of_series__ = int(seriesStr)
