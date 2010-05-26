@@ -4,7 +4,7 @@ import itkExtras
 class bioformats( itkExtras.pipeline ):
   """ Use bioformat to import image in ITK.
   """
-  def __init__(self, FileName=None, Channel=0, Series=0, Time=0, ImageType=None, Z=None ):
+  def __init__(self, FileName=None, Channel=0, Series=0, Time=0, ImageType=None, Z=None, debug=False ):
     import itk
     itk.pipeline.__init__(self)
     
@@ -14,6 +14,7 @@ class bioformats( itkExtras.pipeline ):
     self.__number_of_series__ = 0
     self.__number_of_times__ = 0
     self.__number_of_z__ = 0
+    self.debug = debug
     
     # if ImageType is None, give it a default value
     # this is useful to avoid loading Base while loading this module
@@ -54,14 +55,15 @@ class bioformats( itkExtras.pipeline ):
 	raise "Error: At least one of z or time must not be None."
       elif self.GetZ() == None:
 	com = "@JAVA_RUNTIME@ -cp %s SimpleImageConverter -channel %s -series %s -time %s %s %s"
-	com = com % (cp, self.GetChannel(), self.GetSeries(), self.GetTime(), self.GetFileName().replace(" ", r"\ "), self.__tmpFile__.name)
+	com = com % (cp, self.GetChannel(), self.GetSeries(), self.GetTime(), self.GetEscapedFileName().replace(" ", r"\ "), self.__tmpFile__.name)
       elif self.GetTime() == None:
 	com = "@JAVA_RUNTIME@ -cp %s SimpleImageConverter -channel %s -series %s -z %s %s %s"
-	com = com % (cp, self.GetChannel(), self.GetSeries(), self.GetZ(), self.GetFileName().replace(" ", r"\ "), self.__tmpFile__.name)
+	com = com % (cp, self.GetChannel(), self.GetSeries(), self.GetZ(), self.GetEscapedFileName().replace(" ", r"\ "), self.__tmpFile__.name)
       else:
 	com = "@JAVA_RUNTIME@ -cp %s SimpleImageConverter -channel %s -series %s -time %s -z %s %s %s"
-	com = com % (cp, self.GetChannel(), self.GetSeries(), self.GetTime(), self.GetZ(), self.GetFileName().replace(" ", r"\ "), self.__tmpFile__.name)
-      # print com
+	com = com % (cp, self.GetChannel(), self.GetSeries(), self.GetTime(), self.GetZ(), self.GetEscapedFileName().replace(" ", r"\ "), self.__tmpFile__.name)
+      if self.debug:
+        print com
       status, output = commands.getstatusoutput( com )
       if status:
         raise output + "\n\n" + com
@@ -69,10 +71,12 @@ class bioformats( itkExtras.pipeline ):
       spacingStr, channelStr, timeStr, seriesStr, zStr = output.strip().split("\n")
       
       def changeDefault(v):
-        if v==0.0:
-            return 1.0
-        return v
-      spacing = [changeDefault(float(v)) for v in spacingStr.strip().split("\t")]
+        if v == "null" or float(v)==0.0:
+          return 1.0
+        return float(v)
+      if self.debug:
+        print spacingStr
+      spacing = [changeDefault(v) for v in spacingStr.strip().split("\t")]
       self.filters[-1].SetOutputSpacing( spacing )
       
       self.__number_of_channels__ = int(channelStr)
@@ -102,6 +106,9 @@ class bioformats( itkExtras.pipeline ):
 
   def GetFileName(self):
     return self.__file_name__
+  
+  def GetEscapedFileName(self):
+    return "'" + self.__file_name__.replace("'", "'\\''") + "'"
   
   def GetChannel(self):
     return self.__channel__
