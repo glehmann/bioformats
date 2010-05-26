@@ -68,7 +68,11 @@ class bioformats( itkExtras.pipeline ):
       # get some metadata
       spacingStr, channelStr, timeStr, seriesStr, zStr = output.strip().split("\n")
       
-      spacing = [float(v) for v in spacingStr.strip().split("\t")]
+      def changeDefault(v):
+        if v==0.0:
+            return 1.0
+        return v
+      spacing = [changeDefault(float(v)) for v in spacingStr.strip().split("\t")]
       self.filters[-1].SetOutputSpacing( spacing )
       
       self.__number_of_channels__ = int(channelStr)
