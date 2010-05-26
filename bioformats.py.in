@@ -132,7 +132,7 @@ class bioformats( itkExtras.pipeline ):
     return self.__number_of_times__
     
   def GetNumberOfZ(self):
-    return elf.__number_of_z__
+    return self.__number_of_z__
     
   def GetImageType(self):
     return self.__image_type__
