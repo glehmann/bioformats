@@ -44,6 +44,18 @@ class bioformats( itkExtras.pipeline ):
         import itk
         self.filters[0].SetFileName(self.GetFileName())
         self.filters[-1].SetOutputSpacing( 1.0 )
+        self.filters[-1].SetChangeSpacing( True )
+        
+        self.__number_of_channels__ = 1
+        self.__number_of_series__ = 1
+        self.__number_of_times__ = 1
+        self.__number_of_z__ = itk.size(self.filters[0])[2]
+      if self.GetFileName().endswith(".nrrd"):
+        # bypass bioformats if input is tif
+        import itk
+        self.filters[0].SetFileName(self.GetFileName())
+        self.filters[-1].SetOutputSpacing( 1.0 )
+        self.filters[-1].SetChangeSpacing( False )
         
         self.__number_of_channels__ = 1
         self.__number_of_series__ = 1
@@ -98,6 +110,7 @@ class bioformats( itkExtras.pipeline ):
           print spacingStr
         spacing = [changeDefault(v) for v in spacingStr.strip().split("\t")]
         self.filters[-1].SetOutputSpacing( spacing )
+        self.filters[-1].SetChangeSpacing( True )
         
         self.__number_of_channels__ = int(channelStr)
         self.__number_of_series__ = int(seriesStr)
