@@ -28,7 +28,6 @@ class bioformats( itkExtras.pipeline ):
 
     # set up the pipeline
     self.connect( itk.ImageFileReader[ImageType].New() )
-    self.connect( itk.ChangeInformationImageFilter[ImageType].New( ChangeSpacing=True ) )
     
     # and configure the pipeline
     self.SetChannel( Channel )
@@ -39,23 +38,19 @@ class bioformats( itkExtras.pipeline ):
       
   def Run(self):
     if self.GetFileName():
-      if self.GetFileName().endswith(".tif"):
+      if self.GetFileName().endswith(".nrrd"):
         # bypass bioformats if input is tif
         import itk
         self.filters[0].SetFileName(self.GetFileName())
-        self.filters[-1].SetOutputSpacing( 1.0 )
-        self.filters[-1].SetChangeSpacing( True )
         
         self.__number_of_channels__ = 1
         self.__number_of_series__ = 1
         self.__number_of_times__ = 1
         self.__number_of_z__ = itk.size(self.filters[0])[2]
       if self.GetFileName().endswith(".nrrd"):
-        # bypass bioformats if input is tif
+        # bypass bioformats if input is nrrd
         import itk
         self.filters[0].SetFileName(self.GetFileName())
-        self.filters[-1].SetOutputSpacing( 1.0 )
-        self.filters[-1].SetChangeSpacing( False )
         
         self.__number_of_channels__ = 1
         self.__number_of_series__ = 1
@@ -74,7 +69,7 @@ class bioformats( itkExtras.pipeline ):
         # use the tempfile module to get a non used file name and to put
         # the file at the rignt place
         import tempfile
-        self.__tmpFile__ = tempfile.NamedTemporaryFile(suffix='.ome.tiff')
+        self.__tmpFile__ = tempfile.NamedTemporaryFile(suffix='.nrrd')
         # let reader know that the input file has changed
         self.filters[0].SetFileName(self.__tmpFile__.name)
           
@@ -97,20 +92,10 @@ class bioformats( itkExtras.pipeline ):
         if status:
           raise Exception(output + "\n\n" + com)
         # get some metadata
-        spacingStr, channelStr, timeStr, seriesStr, zStr = output.strip().split("\n")
+        channelStr, timeStr, seriesStr, zStr = output.strip().split("\n")
         if self.GetFileName().endswith(".tif"):
           # stack are seen as time series - this is not what we usually want!
           zStr, timeStr = timeStr, zStr
-        
-        def changeDefault(v):
-          if v == "null" or float(v)==0.0:
-            return 1.0
-          return float(v)
-        if self.debug:
-          print spacingStr
-        spacing = [changeDefault(v) for v in spacingStr.strip().split("\t")]
-        self.filters[-1].SetOutputSpacing( spacing )
-        self.filters[-1].SetChangeSpacing( True )
         
         self.__number_of_channels__ = int(channelStr)
         self.__number_of_series__ = int(seriesStr)

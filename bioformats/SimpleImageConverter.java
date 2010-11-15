@@ -22,12 +22,11 @@ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
 */
 
 
-import java.awt.Image;
 import java.io.IOException;
 import loci.formats.*;
 import loci.formats.meta.MetadataRetrieve;
 import loci.formats.meta.MetadataStore;
-import loci.formats.out.TiffWriter;
+import java.io.FileOutputStream;
 
 /**
  * ImageConverter is a utility class for converting a file between formats.
@@ -45,7 +44,7 @@ public final class SimpleImageConverter {
   // -- Utility methods --
 
   /** A utility method for converting a file from the command line. */
-  public static boolean testConvert(IFormatWriter writer, String[] args)
+  public static boolean testConvert(String[] args)
     throws FormatException, IOException
   {
     String in = null, out = null;
@@ -94,8 +93,6 @@ public final class SimpleImageConverter {
       }
     }
     if (in == null || out == null) {
-      System.out.println("To convert a file to " + writer.getFormat() +
-        " format, run:");
       System.out.println("  bfconvert [-debug] in_file out_file");
       return false;
     }
@@ -115,75 +112,87 @@ public final class SimpleImageConverter {
     reader.setId(in);
     reader.setSeries(series);
     
+    System.out.println( reader.getSizeC() );
+    System.out.println( reader.getSizeT() );
+    System.out.println( reader.getSeriesCount() );
+    System.out.println( reader.getSizeZ() );
+
+    FileOutputStream writer = new FileOutputStream(out);
     store = reader.getMetadataStore();
-    if (store instanceof MetadataRetrieve) {
-      MetadataRetrieve meta = (MetadataRetrieve) store;
-      writer.setMetadataRetrieve(meta);
-      System.out.println( meta.getPixelsPhysicalSizeX(0)+"\t"+meta.getPixelsPhysicalSizeY(0)+"\t"+meta.getPixelsPhysicalSizeZ(0) );
-      System.out.println( reader.getSizeC() );
-      System.out.println( reader.getSizeT() );
-      System.out.println( reader.getSeriesCount() );
-      System.out.println( reader.getSizeZ() );
-    }
+    writer.write("NRRD0004\n".getBytes());
+    writer.write("type: ".getBytes());
+    int pt = reader.getPixelType();
+    switch( reader.getPixelType() ) {
+     case FormatTools.INT8: writer.write("int8".getBytes()); break;
+     case FormatTools.INT16: writer.write("int16".getBytes()); break;
+     case FormatTools.INT32: writer.write("int32".getBytes()); break;
+     case FormatTools.UINT8: writer.write("uint8".getBytes()); break;
+     case FormatTools.UINT16: writer.write("uint16".getBytes()); break;
+     case FormatTools.UINT32: writer.write("uint32".getBytes()); break;
+     case FormatTools.FLOAT: writer.write("float".getBytes()); break;
+     case FormatTools.DOUBLE: writer.write("double".getBytes()); break;
+     default: System.out.println("OME-Java library not found."); return false;
+     }
+    writer.write("\n".getBytes());
+    writer.write("dimension: 3\n".getBytes());
+    writer.write("space: left-posterior-superior\n".getBytes());
+    writer.write("kinds: domain domain domain\n".getBytes());
+    writer.write("encoding: raw\n".getBytes());
+    writer.write("space origin: (0,0,0)\n".getBytes());
 
-    if (writer instanceof TiffWriter) {
-      ((TiffWriter) writer).setWriteSequentially(true);
-    }
-    else if (writer instanceof ImageWriter) {
-      IFormatWriter w = ((ImageWriter) writer).getWriter(out);
-      if (w instanceof TiffWriter) {
-        ((TiffWriter) w).setWriteSequentially(true);
-      }
-    }
 
-    writer.setId(out);
-    writer.setInterleaved(reader.isInterleaved());
-    
     if( usez && usetime )
       {
+      writer.write(("sizes: "+reader.getSizeX()+" "+reader.getSizeY()+" 1\n").getBytes());
+      if (store instanceof MetadataRetrieve) {
+        MetadataRetrieve meta = (MetadataRetrieve) store;
+        writer.write(("space directions: ("+meta.getPixelsPhysicalSizeX(0)+",0,0) (0,"+meta.getPixelsPhysicalSizeY(0)+",0) (0,0,1.0)\n").getBytes());
+      }
+      writer.write("\n".getBytes());
       byte[] image = reader.openBytes( reader.getIndex(zposition, channel, time) );
-      writer.saveBytes(0, image);
+      writer.write(image);
+//       writer.saveBytes(0, image);
       }
     else if( usetime && !usez )
       {
+      writer.write(("sizes: "+reader.getSizeX()+" "+reader.getSizeY()+" "+reader.getSizeZ()+"\n").getBytes());
+      if (store instanceof MetadataRetrieve) {
+        MetadataRetrieve meta = (MetadataRetrieve) store;
+        writer.write(("space directions: ("+meta.getPixelsPhysicalSizeX(0)+",0,0) (0,"+meta.getPixelsPhysicalSizeY(0)+",0) (0,0,"+meta.getPixelsPhysicalSizeZ(0)+")\n").getBytes());
+      } 
+      writer.write("\n".getBytes());
       for( int z=0; z<reader.getSizeZ(); z++ )
         {
   //      System.out.println(z);
         byte[] image = reader.openBytes( reader.getIndex(z, channel, time) );
-        writer.saveBytes(z, image);
+        writer.write(image);
+//         writer.saveBytes(z, image);
         }
       }
     else if( usez && !usetime )
       {
+      writer.write(("sizes: "+reader.getSizeX()+" "+reader.getSizeY()+" "+reader.getSizeT()+"\n").getBytes());
+      if (store instanceof MetadataRetrieve) {
+        MetadataRetrieve meta = (MetadataRetrieve) store;
+        writer.write(("space directions: ("+meta.getPixelsPhysicalSizeX(0)+",0,0) (0,"+meta.getPixelsPhysicalSizeY(0)+",0) (0,0,"+meta.getPixelsTimeIncrement(0)+")\n").getBytes());
+      } 
+      writer.write("\n".getBytes());
       for( int t=0; t<reader.getSizeT(); t++ )
         {
   //      System.out.println(z);
         byte[] image = reader.openBytes( reader.getIndex(zposition, channel, t) );
-        writer.saveBytes(t, image);
+        writer.write(image);
+//         writer.saveBytes(t, image);
         }
       }
-    else
-      {
-      System.out.println("At least one of the time or the z position must be specified.");
-      return false;
-      }
-    try
-      {
-      Thread.sleep(1000);
-      writer.close();
-      Thread.sleep(1000);
-      }
-    catch(InterruptedException ie)
-      {
-      //If this thread was intrrupted by nother thread 
-      }
+    writer.close();
     return true;
   }
 
   // -- Main method --
 
   public static void main(String[] args) throws FormatException, IOException {
-    if (!testConvert(new ImageWriter(), args)) System.exit(1);
+    if (!testConvert(args)) System.exit(1);
   }
 
 }
