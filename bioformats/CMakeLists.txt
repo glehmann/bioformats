@@ -1,5 +1,6 @@
 WRAP_ITK_INSTALL("/Python/itkExtras/bioformats" "${CMAKE_CURRENT_SOURCE_DIR}/bio-formats.jar")
 WRAP_ITK_INSTALL("/Python/itkExtras/bioformats" "${CMAKE_CURRENT_SOURCE_DIR}/loci_tools.jar")
+WRAP_ITK_INSTALL("/Python/itkExtras/bioformats" "${CMAKE_CURRENT_SOURCE_DIR}/log4j.properties")
 WRAP_ITK_INSTALL("/Python/itkExtras/bioformats" "${CMAKE_CURRENT_BINARY_DIR}/SimpleImageConverter.class")
 
 ADD_CUSTOM_COMMAND(

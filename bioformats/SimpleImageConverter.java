@@ -73,38 +73,35 @@ public final class SimpleImageConverter {
           else if (args[i].equals("-time")) {
             try {
               time = Integer.parseInt(args[++i]);
-	      usetime = true;
+              usetime = true;
             }
             catch (NumberFormatException exc) { }
           }
           else if (args[i].equals("-z")) {
             try {
               zposition = Integer.parseInt(args[++i]);
-	      usez = true;
+              usez = true;
             }
             catch (NumberFormatException exc) { }
           }
-          else LogTools.println("Ignoring unknown command flag: " + args[i]);
+          else System.out.println("Ignoring unknown command flag: " + args[i]);
         }
         else {
           if (in == null) in = args[i];
           else if (out == null) out = args[i];
-          else LogTools.println("Ignoring unknown argument: " + args[i]);
+          else System.out.println("Ignoring unknown argument: " + args[i]);
         }
       }
     }
-    if (FormatHandler.debug) {
-      LogTools.println("Debugging at level " + FormatHandler.debugLevel);
-    }
     if (in == null || out == null) {
-      LogTools.println("To convert a file to " + writer.getFormat() +
+      System.out.println("To convert a file to " + writer.getFormat() +
         " format, run:");
-      LogTools.println("  bfconvert [-debug] in_file out_file");
+      System.out.println("  bfconvert [-debug] in_file out_file");
       return false;
     }
 
     long start = System.currentTimeMillis();
-    // LogTools.print(in + " ");
+    // System.out.print(in + " ");
     IFormatReader reader = new ImageReader();
     reader = new ChannelSeparator(reader);
     
@@ -112,7 +109,7 @@ public final class SimpleImageConverter {
     reader.setMetadataFiltered(true);
     reader.setOriginalMetadataPopulated(true);
     MetadataStore store = MetadataTools.createOMEXMLMetadata();
-    if (store == null) LogTools.println("OME-Java library not found.");
+    if (store == null) System.out.println("OME-Java library not found.");
     else reader.setMetadataStore(store);
 
     reader.setId(in);
@@ -122,42 +119,63 @@ public final class SimpleImageConverter {
     if (store instanceof MetadataRetrieve) {
       MetadataRetrieve meta = (MetadataRetrieve) store;
       writer.setMetadataRetrieve(meta);
-      LogTools.println( meta.getDimensionsPhysicalSizeX(0, 0)+"\t"+meta.getDimensionsPhysicalSizeY(0, 0)+"\t"+meta.getDimensionsPhysicalSizeZ(0, 0) );
-      LogTools.println( reader.getSizeC() );
-      LogTools.println( reader.getSizeT() );
-      LogTools.println( reader.getSeriesCount() );
-      LogTools.println( reader.getSizeZ() );
+      System.out.println( meta.getPixelsPhysicalSizeX(0)+"\t"+meta.getPixelsPhysicalSizeY(0)+"\t"+meta.getPixelsPhysicalSizeZ(0) );
+      System.out.println( reader.getSizeC() );
+      System.out.println( reader.getSizeT() );
+      System.out.println( reader.getSeriesCount() );
+      System.out.println( reader.getSizeZ() );
+    }
+
+    if (writer instanceof TiffWriter) {
+      ((TiffWriter) writer).setWriteSequentially(true);
+    }
+    else if (writer instanceof ImageWriter) {
+      IFormatWriter w = ((ImageWriter) writer).getWriter(out);
+      if (w instanceof TiffWriter) {
+        ((TiffWriter) w).setWriteSequentially(true);
+      }
     }
 
     writer.setId(out);
+    writer.setInterleaved(reader.isInterleaved());
     
     if( usez && usetime )
       {
-      Image image = reader.openImage( reader.getIndex(zposition, channel, time) );
-      writer.saveImage(image, true);
+      byte[] image = reader.openBytes( reader.getIndex(zposition, channel, time) );
+      writer.saveBytes(0, image);
       }
     else if( usetime && !usez )
       {
       for( int z=0; z<reader.getSizeZ(); z++ )
-	{
-  //      LogTools.println(z);
-	Image image = reader.openImage( reader.getIndex(z, channel, time) );
-	writer.saveImage(image, z==reader.getSizeZ()-1);
-	}
+        {
+  //      System.out.println(z);
+        byte[] image = reader.openBytes( reader.getIndex(z, channel, time) );
+        writer.saveBytes(z, image);
+        }
       }
     else if( usez && !usetime )
       {
       for( int t=0; t<reader.getSizeT(); t++ )
-	{
-  //      LogTools.println(z);
-	Image image = reader.openImage( reader.getIndex(zposition, channel, t) );
-	writer.saveImage(image, t==reader.getSizeT()-1);
-	}
+        {
+  //      System.out.println(z);
+        byte[] image = reader.openBytes( reader.getIndex(zposition, channel, t) );
+        writer.saveBytes(t, image);
+        }
       }
     else
       {
-      LogTools.println("At least one of the time or the z position must be specified.");
+      System.out.println("At least one of the time or the z position must be specified.");
       return false;
+      }
+    try
+      {
+      Thread.sleep(1000);
+      writer.close();
+      Thread.sleep(1000);
+      }
+    catch(InterruptedException ie)
+      {
+      //If this thread was intrrupted by nother thread 
       }
     return true;
   }

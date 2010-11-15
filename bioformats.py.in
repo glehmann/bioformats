@@ -74,7 +74,7 @@ class bioformats( itkExtras.pipeline ):
         # use the tempfile module to get a non used file name and to put
         # the file at the rignt place
         import tempfile
-        self.__tmpFile__ = tempfile.NamedTemporaryFile(suffix='.tif')
+        self.__tmpFile__ = tempfile.NamedTemporaryFile(suffix='.ome.tiff')
         # let reader know that the input file has changed
         self.filters[0].SetFileName(self.__tmpFile__.name)
           
