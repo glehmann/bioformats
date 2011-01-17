@@ -134,6 +134,7 @@ public final class SimpleImageConverter {
      default: System.out.println("OME-Java library not found."); return false;
      }
     writer.write("\n".getBytes());
+    writer.write("endian: little\n".getBytes());
     writer.write("dimension: 3\n".getBytes());
     writer.write("space: left-posterior-superior\n".getBytes());
     writer.write("kinds: domain domain domain\n".getBytes());
