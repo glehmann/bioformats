@@ -102,7 +102,7 @@ public final class SimpleImageConverter {
     IFormatReader reader = new ImageReader();
     reader = new ChannelSeparator(reader);
     
-    
+    reader.setGroupFiles(false); // avoid grouping all the .lsm when a .mdb is there
     reader.setMetadataFiltered(true);
     reader.setOriginalMetadataPopulated(true);
     MetadataStore store = MetadataTools.createOMEXMLMetadata();
