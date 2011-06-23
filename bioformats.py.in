@@ -77,6 +77,9 @@ class bioformats( itkExtras.pipeline ):
         import commands
         if z == None and t == None:
           raise Exception("Error: At least one of z or time must not be None.")
+        elif c == None:
+          com = "@JAVA_RUNTIME@ -cp %s SimpleImageConverter -z %s -series %s -time %s %s %s"
+          com = com % (cp, z, s, t, self.GetEscapedFileName(), self.__tmpFile__.name)
         elif z == None:
           com = "@JAVA_RUNTIME@ -cp %s SimpleImageConverter -channel %s -series %s -time %s %s %s"
           com = com % (cp, c, s, t, self.GetEscapedFileName(), self.__tmpFile__.name)

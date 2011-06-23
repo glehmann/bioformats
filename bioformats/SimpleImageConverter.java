@@ -50,6 +50,7 @@ public final class SimpleImageConverter {
     String in = null, out = null;
     int series = 0;
     int channel = 0;
+    boolean usechannel = false;
     int time = 0;
     boolean usetime = false;
     int zposition = 0;
@@ -66,6 +67,7 @@ public final class SimpleImageConverter {
           else if (args[i].equals("-channel")) {
             try {
               channel = Integer.parseInt(args[++i]);
+              usechannel = true;
             }
             catch (NumberFormatException exc) { }
           }
@@ -142,7 +144,23 @@ public final class SimpleImageConverter {
     writer.write("space origin: (0,0,0)\n".getBytes());
 
 
-    if( usez && usetime )
+    if( !usechannel && usez )
+      {
+      writer.write(("sizes: "+reader.getSizeX()+" "+reader.getSizeY()+" "+reader.getSizeC()+"\n").getBytes());
+      if (store instanceof MetadataRetrieve) {
+        MetadataRetrieve meta = (MetadataRetrieve) store;
+        writer.write(("space directions: ("+meta.getPixelsPhysicalSizeX(0)+",0,0) (0,"+meta.getPixelsPhysicalSizeY(0)+",0) (0,0,1.0)\n").getBytes());
+      }
+      writer.write("\n".getBytes());
+      for( int c=0; c<reader.getSizeC(); c++ )
+        {
+  //      System.out.println(z);
+        byte[] image = reader.openBytes( reader.getIndex(zposition, c, time) );
+        writer.write(image);
+//         writer.saveBytes(z, image);
+        }
+      }
+    else if( usez && usetime )
       {
       writer.write(("sizes: "+reader.getSizeX()+" "+reader.getSizeY()+" 1\n").getBytes());
       if (store instanceof MetadataRetrieve) {
@@ -159,7 +177,11 @@ public final class SimpleImageConverter {
       writer.write(("sizes: "+reader.getSizeX()+" "+reader.getSizeY()+" "+reader.getSizeZ()+"\n").getBytes());
       if (store instanceof MetadataRetrieve) {
         MetadataRetrieve meta = (MetadataRetrieve) store;
-        writer.write(("space directions: ("+meta.getPixelsPhysicalSizeX(0)+",0,0) (0,"+meta.getPixelsPhysicalSizeY(0)+",0) (0,0,"+meta.getPixelsPhysicalSizeZ(0)+")\n").getBytes());
+        Double dz = meta.getPixelsPhysicalSizeZ(0);
+        if( dz == null ) {
+          dz = new Double(1.0);
+        }
+        writer.write(("space directions: ("+meta.getPixelsPhysicalSizeX(0)+",0,0) (0,"+meta.getPixelsPhysicalSizeY(0)+",0) (0,0,"+dz+")\n").getBytes());
       } 
       writer.write("\n".getBytes());
       for( int z=0; z<reader.getSizeZ(); z++ )
