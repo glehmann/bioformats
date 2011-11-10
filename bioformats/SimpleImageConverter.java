@@ -177,11 +177,19 @@ public final class SimpleImageConverter {
       writer.write(("sizes: "+reader.getSizeX()+" "+reader.getSizeY()+" "+reader.getSizeZ()+"\n").getBytes());
       if (store instanceof MetadataRetrieve) {
         MetadataRetrieve meta = (MetadataRetrieve) store;
+        Double dx = meta.getPixelsPhysicalSizeX(0);
+        if( dx == null || dx.doubleValue() == 0.0 ) {
+          dx = new Double(1.0);
+        }
+        Double dy = meta.getPixelsPhysicalSizeY(0);
+        if( dy == null || dy.doubleValue() == 0.0 ) {
+          dy = new Double(1.0);
+        }
         Double dz = meta.getPixelsPhysicalSizeZ(0);
-        if( dz == null ) {
+        if( dz == null || dz.doubleValue() == 0.0 ) {
           dz = new Double(1.0);
         }
-        writer.write(("space directions: ("+meta.getPixelsPhysicalSizeX(0)+",0,0) (0,"+meta.getPixelsPhysicalSizeY(0)+",0) (0,0,"+dz+")\n").getBytes());
+        writer.write(("space directions: ("+dx+",0,0) (0,"+dy+",0) (0,0,"+dz+")\n").getBytes());
       } 
       writer.write("\n".getBytes());
       for( int z=0; z<reader.getSizeZ(); z++ )
